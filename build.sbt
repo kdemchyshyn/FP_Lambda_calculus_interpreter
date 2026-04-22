@@ -9,6 +9,7 @@ lazy val root = project
     libraryDependencies += "org.scalacheck" %% "scalacheck"       % "1.18.1" % Test,
     libraryDependencies += "org.scalameta"  %% "munit"            % "1.0.0"  % Test,
     libraryDependencies += "org.scalameta"  %% "munit-scalacheck" % "1.0.0"  % Test,
+    libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "2.3.0",
     testFrameworks += new TestFramework("munit.Framework"),
     scalacOptions ++= Seq("-Xfatal-warnings", "-Yexplicit-nulls"),
   )
