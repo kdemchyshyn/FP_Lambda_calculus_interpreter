@@ -18,9 +18,10 @@ end LambdaTermParser
 
 class ExpressionParser extends RegexParsers:
   def variable : Parser[Variable] = "[a-z]+".r ^^ { name => Variable(name)}
-  def application : Parser[Application] = "(" ~> expression ~ expression <~ ")" ^^ { case  function ~ argument => Application(function, argument) }
+  def subExpression : Parser[LambdaTerm] = variable | abstraction | "(" ~> expression <~ ")"
+  def applicationOrsubExpression : Parser[LambdaTerm] = rep1(subExpression) ^^ { subExpressions => subExpressions.reduceLeft((function, argument) => Application(function, argument)) }
   def abstraction : Parser[Abstraction] = "\\" ~> variable ~ ("." ~> expression) ^^ {case boundVariable ~ body => Abstraction(boundVariable, body)}
-  def expression : Parser[LambdaTerm] = application | abstraction | variable
+  def expression : Parser[LambdaTerm] = abstraction | applicationOrsubExpression
 
 
 
