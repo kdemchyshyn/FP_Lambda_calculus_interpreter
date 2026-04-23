@@ -3,14 +3,14 @@ import scala.collection.immutable
 
 object lambdaCalculus:
 
-  sealed trait Term:
+  sealed trait LambdaTerm:
     def freeVariables: Set[Variable]
-    def substitute(variable: Variable, replacement: Term): Term
+    def substitute(variable: Variable, replacement: LambdaTerm): LambdaTerm
 
-  case class Variable(name: String) extends Term:
+  case class Variable(name: String) extends LambdaTerm:
     def freeVariables: Set[Variable] = Set(this)
 
-    def substitute(variable: Variable, replacement: Term): Term =
+    def substitute(variable: Variable, replacement: LambdaTerm): LambdaTerm =
       if this == variable then replacement
       else this
 
@@ -21,10 +21,10 @@ object lambdaCalculus:
     if forbidden.contains(variable) then genNewVariable(variable.concatenate("'"), forbidden)
     else variable
 
-  case class Abstraction(boundVariable: Variable, body: Term) extends Term:
+  case class Abstraction(boundVariable: Variable, body: LambdaTerm) extends LambdaTerm:
     def freeVariables: Set[Variable] = body.freeVariables - boundVariable
 
-    def substitute(variable: Variable, replacement: Term): Term =
+    def substitute(variable: Variable, replacement: LambdaTerm): LambdaTerm =
       if !freeVariables.contains(variable) then this
       else if !replacement.freeVariables.contains(boundVariable) then
         Abstraction(boundVariable, body.substitute(variable, replacement))
@@ -32,8 +32,8 @@ object lambdaCalculus:
         val newVariable = genNewVariable(boundVariable, (body.freeVariables ++ replacement.freeVariables))
         Abstraction(newVariable, body.substitute(boundVariable, newVariable).substitute(variable, replacement))
 
-  case class Application(left: Term, right: Term) extends Term:
+  case class Application(left: LambdaTerm, right: LambdaTerm) extends LambdaTerm:
     def freeVariables: Set[Variable] = left.freeVariables ++ right.freeVariables
 
-    def substitute(variable: Variable, replacement: Term): Term =
+    def substitute(variable: Variable, replacement: LambdaTerm): LambdaTerm =
       Application(left.substitute(variable, replacement), right.substitute(variable, replacement))
