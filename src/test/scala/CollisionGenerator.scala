@@ -24,21 +24,21 @@ object CollisionGenerator:
       argument <- genCollisionLambdaTerm
     yield Application(argument, function)
 
-  lazy val genLambdaTerm: Gen[Term] =
+  lazy val genLambdaTerm: Gen[LambdaTerm] =
     Gen.frequency(
       3 -> lzy(genCollisionVariable),
       1 -> lzy(genAbstraction),
       1 -> lzy(genApplication),
     )
 
-  lazy val genCollisionLambdaTerm: Gen[Term] =
+  lazy val genCollisionLambdaTerm: Gen[LambdaTerm] =
     Gen.frequency(
       3 -> lzy(genCollisionVariable),
       1 -> lzy(genAbstraction),
       1 -> lzy(genApplication),
     )
     
-  val genRule7: Gen[(Variable, Term, Variable, Term)] =
+  val genRule7: Gen[(Variable, LambdaTerm, Variable, LambdaTerm)] =
     for
       x <- genCollisionVariable
       y <- genCollisionVariable.suchThat(_ != x)
