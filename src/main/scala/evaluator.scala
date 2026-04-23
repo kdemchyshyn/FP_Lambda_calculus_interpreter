@@ -1,4 +1,4 @@
-import lambda_terms.Term
+import lambdaCalculus.Term
 import strategies.Strategy
 
 import scala.annotation.{tailrec, targetName}

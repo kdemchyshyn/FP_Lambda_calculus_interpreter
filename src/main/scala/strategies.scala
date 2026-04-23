@@ -1,4 +1,4 @@
-import lambda_terms.Term
+import lambdaCalculus.Term
 
 import scala.annotation.{tailrec, targetName}
 import scala.collection.immutable

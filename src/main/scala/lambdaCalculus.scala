@@ -1,7 +1,7 @@
 import scala.annotation.{tailrec, targetName}
 import scala.collection.immutable
 
-object lambda_terms:
+object lambdaCalculus:
 
   sealed trait Term:
     def freeVariables: Set[Variable]
