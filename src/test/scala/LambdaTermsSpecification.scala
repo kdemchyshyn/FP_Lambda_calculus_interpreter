@@ -38,7 +38,7 @@ object FreeVariables extends Properties("Free Variables"):
     val termFV = Abstraction(v, t).freeVariables
     !termFV.contains(v) && termFV.subsetOf(t.freeVariables)
 
-  property("FV of an application: The set of free variables for (x y) should be the union of free variables of x and y") = forAll: (x: LambdaTerm, y:Term) =>
+  property("FV of an application: The set of free variables for (x y) should be the union of free variables of x and y") = forAll: (x: LambdaTerm, y: LambdaTerm) =>
     Application(x, y).freeVariables == x.freeVariables.union(y.freeVariables)
 
   property("FV with shadowing: The set of free variables for λx. (λx. x) should be empty due to shadowing") = forAll: (v: Variable) =>
