@@ -9,7 +9,12 @@ object evaluator:
   enum Result:
     case Success(term: LambdaTerm)
     case Timeout(lastTerm: LambdaTerm)
-  
+
   object Evaluator:
-    //@tailrec uncomment when recursion is ready
-    def evaluate(term: LambdaTerm, strategy: Strategy, limit: Int): Result = ???
+    @tailrec
+    def evaluate(term: LambdaTerm, strategy: Strategy, limit: Int): Result =
+      if limit <= 0 then Result.Timeout(term)
+      else
+        strategy.reductionStep(term) match
+          case Some(next) => evaluate(next, strategy, limit - 1)
+          case None => Result.Success(term)
