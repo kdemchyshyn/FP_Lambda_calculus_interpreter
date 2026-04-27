@@ -125,7 +125,8 @@ object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"
 
       Evaluator.evaluate(Application(id, z), NormalOrder, 10) match
         case Result.Success(res) => res == z
-        case _                   => false
+        case _                   => false // Review is there any conventional function in Scalacheck to fail the test
+        // use it if exists
 
   property("Nested reduction: Evaluator should handle multiple reduction steps until normal form is reached") = forAll:
     (x: Variable, y: Variable, a: Variable, b: Variable) =>
@@ -143,10 +144,12 @@ object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"
         case Result.Success(res) => res == y
         case _                   => false
 
+  // Clarify the logic of the test
   property("Normal form is irreducible (NormalOrder)") = forAll: (term: LambdaTerm) =>
     Evaluator.evaluate(term, NormalOrder, 20) match
       case Result.Success(res) =>
         NormalOrder.reductionStep(res).isEmpty
+      // Fix it, there must not be any default true
       case _ => true
 
   property("Applicative Order: Must reduce arguments before applying functions") = forAll: (v: Variable) =>

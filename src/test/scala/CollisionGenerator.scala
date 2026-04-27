@@ -34,8 +34,8 @@ object CollisionGenerator:
     for
       x      <- genCollisionVariable
       y      <- genCollisionVariable.suchThat(_ != x)
-      n_base <- genCollisionLambdaTerm
-      n       = Application(n_base, y)
-      p_base <- genCollisionLambdaTerm
-      p       = Application(p_base, x)
+      nBase <- genCollisionLambdaTerm
+      n       = Application(nBase, y)
+      pBase <- genCollisionLambdaTerm
+      p       = Application(pBase, x)
     yield (x, n, y, p)
