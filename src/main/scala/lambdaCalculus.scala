@@ -16,7 +16,7 @@ object lambdaCalculus:
       if this == variable then replacement
       else this
     override def toString: String = name
-    def toSource: String = name
+    def toSource: String          = name
 
     def concatenate(symbol: String): Variable = Variable(name + symbol)
 
@@ -36,8 +36,8 @@ object lambdaCalculus:
         val newVariable = genNewVariable(boundVariable, (body.freeVariables ++ replacement.freeVariables))
         Abstraction(newVariable, body.substitute(boundVariable, newVariable).substitute(variable, replacement))
     override def toString: String = s"(\\$boundVariable.${body.toString})"
-    def toSource: String = s"\\$boundVariable.${body.toSource}"
-    
+    def toSource: String          = s"\\$boundVariable.${body.toSource}"
+
   case class Application(left: LambdaTerm, right: LambdaTerm) extends LambdaTerm:
     def freeVariables: Set[Variable] = left.freeVariables ++ right.freeVariables
 
@@ -45,13 +45,14 @@ object lambdaCalculus:
       Application(left.substitute(variable, replacement), right.substitute(variable, replacement))
 
     override def toString: String = s"(${left.toString} ${right.toString})"
+
     def toSource: String =
       val functionStr = left match
         case _: Abstraction => s"(${left.toSource})"
-        case _ => left.toSource
-  
+        case _              => left.toSource
+
       val argumentStr = right match
         case _: Variable => right.toSource
-        case _ => s"(${right.toSource})"
-  
+        case _           => s"(${right.toSource})"
+
       s"$functionStr $argumentStr"

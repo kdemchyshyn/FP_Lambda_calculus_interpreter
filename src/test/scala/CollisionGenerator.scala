@@ -6,16 +6,16 @@ import org.scalacheck.Gen.lzy
 
 object CollisionGenerator:
 
-  val genCollisionVariableName : Gen[String] = Gen.oneOf("x", "y", "z").suchThat(_.nonEmpty)
+  val genCollisionVariableName: Gen[String] = Gen.oneOf("x", "y", "z").suchThat(_.nonEmpty)
 
   val genCollisionVariable: Gen[Variable] =
     for name <- genCollisionVariableName
-      yield Variable(name)
+    yield Variable(name)
 
   val genAbstraction: Gen[Abstraction] =
     for
       boundVariable <- genCollisionVariable
-      body <- genLambdaTerm
+      body          <- genLambdaTerm
     yield Abstraction(boundVariable, body)
 
   val genApplication: Gen[Application] =
@@ -25,25 +25,17 @@ object CollisionGenerator:
     yield Application(argument, function)
 
   lazy val genLambdaTerm: Gen[LambdaTerm] =
-    Gen.frequency(
-      3 -> lzy(genCollisionVariable),
-      1 -> lzy(genAbstraction),
-      1 -> lzy(genApplication),
-    )
+    Gen.frequency(3 -> lzy(genCollisionVariable), 1 -> lzy(genAbstraction), 1 -> lzy(genApplication))
 
   lazy val genCollisionLambdaTerm: Gen[LambdaTerm] =
-    Gen.frequency(
-      3 -> lzy(genCollisionVariable),
-      1 -> lzy(genAbstraction),
-      1 -> lzy(genApplication),
-    )
-    
+    Gen.frequency(3 -> lzy(genCollisionVariable), 1 -> lzy(genAbstraction), 1 -> lzy(genApplication))
+
   val genRule7: Gen[(Variable, LambdaTerm, Variable, LambdaTerm)] =
     for
-      x <- genCollisionVariable
-      y <- genCollisionVariable.suchThat(_ != x)
+      x      <- genCollisionVariable
+      y      <- genCollisionVariable.suchThat(_ != x)
       n_base <- genCollisionLambdaTerm
-      n = Application(n_base, y)
+      n       = Application(n_base, y)
       p_base <- genCollisionLambdaTerm
-      p = Application(p_base, x)
+      p       = Application(p_base, x)
     yield (x, n, y, p)
