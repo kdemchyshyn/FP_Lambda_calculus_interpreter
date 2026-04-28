@@ -38,7 +38,7 @@ object strategies:
     def reductionStep(term: LambdaTerm): Option[LambdaTerm] =
       term match
         case app: Application =>
-          tryBetaReduce(app.left, app.right).orElse(reduceLeft(app.left, app.right, reductionStep))
+          tryBetaReduce(app.left, app.right).orElse(reduceLeft(app.left, app.right, reductionStep)).orElse(reduceRight(app.left, app.right, reductionStep))
 
         case a: Abstraction =>
           val reducedBody = reductionStep(a.body)
