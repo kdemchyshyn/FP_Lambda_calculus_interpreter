@@ -86,7 +86,7 @@ object Substitution extends Properties("Substitution"):
         res match
           case Abstraction(z, newBody) =>
             (z != y) && (z != x) && !n.freeVariables.contains(z) && !p.freeVariables.contains(z) && (newBody != p)
-          case _ => false
+          case _ => Prop.falsified
       }
     }
 
@@ -123,13 +123,14 @@ object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"
       NormalOrder.reductionStep(Application(id, a)).contains(a)
 
   property("Identity application: Evaluator should reduce (λx. x) z to z") = forAll:
-    (x: Variable, a: LambdaTerm, z: Variable) =>
+    (x: Variable, z: Variable) =>
       val omega = Application(Abstraction(x, Application(x, x)), Abstraction(x, Application(x, x)))
       val id    = Abstraction(x, x)
 
       Evaluator.evaluate(Application(id, z), NormalOrder, 10) match
-        case Result.Success(res) => res == z
-        case _                   => false
+        case Result.Success(res) => Prop(res == z)
+        case _                   => Prop.falsified // Review is there any conventional function in Scalacheck to fail the test
+        // use it if exists
 
   property("Nested reduction: Evaluator should handle multiple reduction steps until normal form is reached") = forAll:
     (x: Variable, y: Variable, a: Variable, b: Variable) =>
@@ -137,8 +138,8 @@ object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"
       (x != y && x != a && x != b && y != a && y != b) ==> {
         val term = Application(Application(Abstraction(x, Abstraction(y, Application(x, y))), a), b)
         Evaluator.evaluate(term, NormalOrder, 10) match
-          case Result.Success(res) => res == Application(a, b)
-          case _                   => false
+          case Result.Success(res) => Prop(res == Application(a, b))
+          case _                   => Prop.falsified
       }
 
   property("Normal Order: Avoiding infinite loops - reduce (λx. y) Ω to y even if Ω is non-terminating") = forAll:
@@ -147,15 +148,17 @@ object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"
         val omega = Application(Abstraction(x, Application(x, x)), Abstraction(x, Application(x, x)))
         val term  = Application(Abstraction(x, y), omega)
         Evaluator.evaluate(term, NormalOrder, 10) match
-          case Result.Success(res) => res == y
-          case _                   => false
+          case Result.Success(res) => Prop(res == y)
+          case _                   => Prop.falsified
       }
 
+  // Clarify the logic of the test
   property("Normal form is irreducible (NormalOrder)") = forAll: (term: LambdaTerm) =>
     Evaluator.evaluate(term, NormalOrder, 20) match
       case Result.Success(res) =>
-        NormalOrder.reductionStep(res).isEmpty
-      case _ => true
+        Prop(NormalOrder.reductionStep(res).isEmpty)
+      // Fix it, there must not be any default true
+      case _ => Prop.undecided
 
   property("Applicative Order: Must reduce arguments before applying functions") = forAll: (v: Variable) =>
     val id   = Abstraction(v, v)
@@ -171,15 +174,15 @@ object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"
         val term  = Application(Abstraction(x, y), omega)
         Evaluator.evaluate(term, ApplicativeOrder, 5) match
           case Result.Timeout(_) => true
-          case _                 => false
+          case _                 => Prop.falsified
       }
 
   property("Applicative Order: Reduction to Normal Form") = forAll: (v: Variable) =>
     val id   = Abstraction(v, v)
     val term = Application(id, v)
     Evaluator.evaluate(term, ApplicativeOrder, 5) match
-      case Result.Success(res) => res == v
-      case _                   => false
+      case Result.Success(res) => Prop(res == v)
+      case _                   => Prop.falsified
 
   property("Beta-Reduction: Multiple applications - ((λx.λy. x) a) b should reduce to 'a'") = forAll:
     (x: Variable, y: Variable, a: Variable, b: Variable) =>
@@ -188,7 +191,7 @@ object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"
         val term  = Application(Application(const, a), b)
         Evaluator.evaluate(term, NormalOrder, 10) match
           case Result.Success(res) => res == a
-          case _                   => false
+          case _                   => Prop.falsified
       }
 
   property("Reduction step returns None for variables") = forAll: (v: Variable) =>
@@ -205,7 +208,7 @@ object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"
 
       (normal, applicative) match
         case (Result.Success(_), Result.Timeout(_)) => true
-        case _                                      => false
+        case _                                      => Prop.falsified
     }
 
 end BetaReductionAndEvaluator
@@ -219,8 +222,8 @@ object NonTerminationAndStepLimit extends Properties("Non-termination & Step Lim
     val omega = Application(Abstraction(x, Application(x, x)), Abstraction(x, Application(x, x)))
     val limit = 5
     Evaluator.evaluate(omega, NormalOrder, limit) match
-      case Result.Timeout(_) => true
-      case _                 => false
+      case Result.Timeout(_) => Prop(true)
+      case _                 => Prop.falsified
 
   property("Step limit reporting: Result should clearly indicate evaluation stopped due to limit") = forAll:
     (x: Variable) =>
@@ -230,6 +233,6 @@ object NonTerminationAndStepLimit extends Properties("Non-termination & Step Lim
   property("Zero step limit: Evaluator should return the original term if limit is zero") = forAll: (x: Variable) =>
     val omega = Application(Abstraction(x, Application(x, x)), Abstraction(x, Application(x, x)))
     Evaluator.evaluate(omega, NormalOrder, 0) match
-      case Result.Timeout(t) => t == omega
-      case _                 => false
+      case Result.Timeout(t) => Prop(t == omega)
+      case _                 => Prop.falsified
 end NonTerminationAndStepLimit
