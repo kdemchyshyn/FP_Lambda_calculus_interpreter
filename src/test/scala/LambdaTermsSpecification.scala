@@ -1,12 +1,13 @@
 import CollisionGenerator.*
 import evaluator.*
 import evaluator.Result
-import generators.given
 import lambdaCalculus.*
 import org.scalacheck.*
 import org.scalacheck.Prop.*
 import org.scalacheck.Test.Parameters
 import strategies.*
+import generators.given
+
 
 object LambdaTermModel extends Properties("LambdaTermModel"):
 
@@ -110,6 +111,12 @@ end Substitution
 
 object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"):
 
+  def containsRedex(t: LambdaTerm): Boolean = t match
+    case Variable(_) => false
+    case Abstraction(_, body) => containsRedex(body)
+    case Application(Abstraction(_, _), _) => true
+    case Application(left, right) => containsRedex(left) || containsRedex(right)
+
   override def overrideParameters(p: Parameters): Parameters =
     p.withMinSuccessfulTests(50).withMaxDiscardRatio(100).withMinSuccessfulTests(1000)
 
@@ -153,11 +160,9 @@ object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"
       }
 
   // Clarify the logic of the test
-  property("Normal form is irreducible (NormalOrder)") = forAll: (term: LambdaTerm) =>
-    Evaluator.evaluate(term, NormalOrder, 20) match
-      case Result.Success(res) =>
-        Prop(NormalOrder.reductionStep(res).isEmpty)
-      // Fix it, there must not be any default true
+  property("Result of evaluation must be a true Normal Form (no redexes left)") = forAll: (term: LambdaTerm) =>
+    Evaluator.evaluate(term, NormalOrder, 50) match
+      case Result.Success(res) => Prop(!containsRedex(res))
       case _ => Prop.undecided
 
   property("Applicative Order: Must reduce arguments before applying functions") = forAll: (v: Variable) =>
@@ -211,6 +216,38 @@ object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"
         case _                                      => Prop.falsified
     }
 
+  property("Test helper func containsRedex: Single variable has no redex") = forAll: (v: Variable) =>
+    !containsRedex(v)
+
+  property("Test helper func containsRedex: Identity abstraction (λx.x) has no redex") = forAll: (v: Variable) =>
+    !containsRedex(Abstraction(v, v))
+
+  property("Test helper func containsRedex: Direct beta-redex (λx.M) N is always detected") = forAll:
+    (v: Variable, body: LambdaTerm, arg: LambdaTerm) =>
+      val redex = Application(Abstraction(v, body), arg)
+      containsRedex(redex) == true
+
+  property("Test helper func containsRedex: Detected if redex is hidden deep inside abstraction") = forAll:
+    (v1: Variable, v2: Variable, arg: LambdaTerm) =>
+      // λz. ((λx.x) y)
+      val innerRedex = Application(Abstraction(v2, v2), arg)
+      val term = Abstraction(v1, innerRedex)
+      containsRedex(term) == true
+
+  property("Test helper func containsRedex: Detected if redex is on the LEFT side of application") = forAll:
+    (v: Variable, arg: LambdaTerm, other: LambdaTerm) =>
+      // ((λx.x) y) z
+      val leftRedex = Application(Abstraction(v, v), arg)
+      val term = Application(leftRedex, other)
+      containsRedex(term) == true
+
+  property("Test helper func containsRedex: Detected if redex is on the RIGHT side of application") = forAll:
+    (v: Variable, arg: LambdaTerm, other: LambdaTerm) =>
+      // z ((λx.x) y)
+      val rightRedex = Application(Abstraction(v, v), arg)
+      val term = Application(other, rightRedex)
+      containsRedex(term) == true
+
 end BetaReductionAndEvaluator
 
 object NonTerminationAndStepLimit extends Properties("Non-termination & Step Limit"):
@@ -236,3 +273,4 @@ object NonTerminationAndStepLimit extends Properties("Non-termination & Step Lim
       case Result.Timeout(t) => Prop(t == omega)
       case _                 => Prop.falsified
 end NonTerminationAndStepLimit
+
