@@ -38,6 +38,12 @@ object lambdaCalculus:
     override def toString: String = s"(\\$boundVariable.${body.toString})"
     def toSource: String          = s"\\$boundVariable.${body.toSource}"
 
+    def apply(argument: LambdaTerm): LambdaTerm =
+      val freshVariable =
+        genNewVariable(boundVariable, body.freeVariables ++ argument.freeVariables ++ Set(boundVariable))
+
+      body.substitute(boundVariable, freshVariable).substitute(freshVariable, argument)
+
   case class Application(left: LambdaTerm, right: LambdaTerm) extends LambdaTerm:
     def freeVariables: Set[Variable] = left.freeVariables ++ right.freeVariables
 
@@ -56,3 +62,6 @@ object lambdaCalculus:
         case _           => s"(${right.toSource})"
 
       s"$functionStr $argumentStr"
+
+    def tryApplying(strategy: LambdaTerm => Option[LambdaTerm]): Option[LambdaTerm] =
+      strategy(this)

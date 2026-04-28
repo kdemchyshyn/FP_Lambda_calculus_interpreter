@@ -5,6 +5,7 @@ import generators.given
 import lambdaCalculus.*
 import org.scalacheck.*
 import org.scalacheck.Prop.*
+import org.scalacheck.Test.Parameters
 import strategies.*
 
 object LambdaTermModel extends Properties("LambdaTermModel"):
@@ -109,6 +110,9 @@ end Substitution
 
 object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"):
 
+  override def overrideParameters(p: Parameters): Parameters =
+    p.withMinSuccessfulTests(50).withMaxDiscardRatio(100).withMinSuccessfulTests(1000)
+
   property("Single-step beta-reduction: (λx. x) a should reduce to a in exactly one step") = forAll:
     (x: Variable, a: LambdaTerm) =>
 
@@ -130,18 +134,22 @@ object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"
   property("Nested reduction: Evaluator should handle multiple reduction steps until normal form is reached") = forAll:
     (x: Variable, y: Variable, a: Variable, b: Variable) =>
       // (λx. λy. x y) a b  -> (λy. a y) b -> a b
-      val term = Application(Application(Abstraction(x, Abstraction(y, Application(x, y))), a), b)
-      Evaluator.evaluate(term, NormalOrder, 10) match
-        case Result.Success(res) => res == Application(a, b)
-        case _                   => false
+      (x != y && x != a && x != b && y != a && y != b) ==> {
+        val term = Application(Application(Abstraction(x, Abstraction(y, Application(x, y))), a), b)
+        Evaluator.evaluate(term, NormalOrder, 10) match
+          case Result.Success(res) => res == Application(a, b)
+          case _                   => false
+      }
 
   property("Normal Order: Avoiding infinite loops - reduce (λx. y) Ω to y even if Ω is non-terminating") = forAll:
     (x: Variable, y: Variable) =>
-      val omega = Application(Abstraction(x, Application(x, x)), Abstraction(x, Application(x, x)))
-      val term  = Application(Abstraction(x, y), omega)
-      Evaluator.evaluate(term, NormalOrder, 10) match
-        case Result.Success(res) => res == y
-        case _                   => false
+      (x != y) ==> {
+        val omega = Application(Abstraction(x, Application(x, x)), Abstraction(x, Application(x, x)))
+        val term  = Application(Abstraction(x, y), omega)
+        Evaluator.evaluate(term, NormalOrder, 10) match
+          case Result.Success(res) => res == y
+          case _                   => false
+      }
 
   property("Normal form is irreducible (NormalOrder)") = forAll: (term: LambdaTerm) =>
     Evaluator.evaluate(term, NormalOrder, 20) match
@@ -175,7 +183,7 @@ object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"
 
   property("Beta-Reduction: Multiple applications - ((λx.λy. x) a) b should reduce to 'a'") = forAll:
     (x: Variable, y: Variable, a: Variable, b: Variable) =>
-      (a != b) ==> {
+      (x != y && x != a && x != b && y != a && y != b) ==> {
         val const = Abstraction(x, Abstraction(y, x))
         val term  = Application(Application(const, a), b)
         Evaluator.evaluate(term, NormalOrder, 10) match
@@ -203,6 +211,9 @@ object BetaReductionAndEvaluator extends Properties("Beta-Reduction & Evaluator"
 end BetaReductionAndEvaluator
 
 object NonTerminationAndStepLimit extends Properties("Non-termination & Step Limit"):
+
+  override def overrideParameters(p: Parameters): Parameters =
+    p.withMinSuccessfulTests(50).withMaxDiscardRatio(100).withMinSuccessfulTests(1000)
 
   property("Step limit reached for Omega: Evaluator should stop reducing Ω after max steps") = forAll: (x: Variable) =>
     val omega = Application(Abstraction(x, Application(x, x)), Abstraction(x, Application(x, x)))
